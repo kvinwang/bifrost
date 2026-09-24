@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { extractProviderErrorMessage, parseRoutingDecisionLine, resolveRawJsonNoticeState } from "./logDetailView.utils";
+import {
+	extractProviderErrorMessage,
+	hasNoToolArguments,
+	isClientToolCallItem,
+	nextSessionLookupStart,
+	isResponsesToolCallItem,
+	parseRoutingDecisionLine,
+	pickNextSessionLog,
+	resolveRawJsonNoticeState,
+} from "./logDetailView.utils";
 
 const base = {
 	hasProvidersAccess: true,
@@ -123,5 +132,90 @@ describe("extractProviderErrorMessage", () => {
 	// detail view down with it.
 	it("returns null for a body that is literally JSON null", () => {
 		expect(extractProviderErrorMessage("null")).toBeNull();
+	});
+});
+describe("isResponsesToolCallItem", () => {
+	// A function_call with `{}` arguments was labelled "Tool Result" and read as a
+	// tool that returned nothing.
+	it("treats *_call items as calls", () => {
+		for (const type of ["function_call", "custom_tool_call", "web_search_call", "mcp_call"]) {
+			expect(isResponsesToolCallItem(type)).toBe(true);
+		}
+	});
+
+	it("does not treat outputs or other items as calls", () => {
+		for (const type of ["function_call_output", "custom_tool_call_output", "message", "reasoning", undefined]) {
+			expect(isResponsesToolCallItem(type)).toBe(false);
+		}
+	});
+});
+
+describe("isClientToolCallItem", () => {
+	it("is true only for calls the caller executes", () => {
+		expect(isClientToolCallItem("function_call")).toBe(true);
+		expect(isClientToolCallItem("custom_tool_call")).toBe(true);
+		// Computer use and local shell run on the caller's machine too, and come
+		// back as computer_call_output / local_shell_call_output next request.
+		expect(isClientToolCallItem("computer_call")).toBe(true);
+		expect(isClientToolCallItem("local_shell_call")).toBe(true);
+		expect(isClientToolCallItem("computer_call_output")).toBe(false);
+		expect(isClientToolCallItem("web_search_call")).toBe(false);
+		expect(isClientToolCallItem("function_call_output")).toBe(false);
+		expect(isClientToolCallItem(undefined)).toBe(false);
+	});
+});
+
+describe("hasNoToolArguments", () => {
+	it("is true for empty and empty-object arguments", () => {
+		expect(hasNoToolArguments("{}")).toBe(true);
+		expect(hasNoToolArguments(" { } ")).toBe(true);
+		expect(hasNoToolArguments("")).toBe(true);
+	});
+
+	it("is false for arguments that carry something", () => {
+		expect(hasNoToolArguments('{"search":"blah"}')).toBe(false);
+		expect(hasNoToolArguments("[]")).toBe(false);
+		expect(hasNoToolArguments("null")).toBe(false);
+		expect(hasNoToolArguments("not json")).toBe(false);
+		expect(hasNoToolArguments(undefined)).toBe(false);
+	});
+});
+
+describe("pickNextSessionLog", () => {
+	const current = { id: "b", timestamp: "2026-09-21T14:07:16.958Z" };
+
+	it("skips the current row and returns the first later one", () => {
+		const logs = [
+			{ id: "b", timestamp: "2026-09-21T14:07:16.958Z" },
+			{ id: "c", timestamp: "2026-09-21T14:07:20.254Z" },
+			{ id: "d", timestamp: "2026-09-21T14:07:25.000Z" },
+		];
+		expect(pickNextSessionLog(logs, current)?.id).toBe("c");
+	});
+
+	it("skips a different row that shares the current timestamp", () => {
+		const logs = [
+			{ id: "a", timestamp: "2026-09-21T14:07:16.958Z" },
+			{ id: "c", timestamp: "2026-09-21T14:07:20.254Z" },
+		];
+		expect(pickNextSessionLog(logs, current)?.id).toBe("c");
+	});
+
+	it("returns undefined when nothing follows", () => {
+		expect(pickNextSessionLog([{ ...current }], current)).toBeUndefined();
+		expect(pickNextSessionLog([], current)).toBeUndefined();
+	});
+});
+// The next-request lookup started at the current row's timestamp and fetched two
+// rows, so a sibling logged in the same millisecond filled the page and the link
+// never appeared. The next request cannot start before this response returns, so
+// the lookup starts just after it.
+describe("nextSessionLookupStart", () => {
+	it("starts one millisecond after the current request", () => {
+		expect(nextSessionLookupStart("2026-09-24T10:08:52.666Z")).toBe("2026-09-24T10:08:52.667Z");
+	});
+
+	it("keeps a timestamp it cannot parse as it is", () => {
+		expect(nextSessionLookupStart("not a time")).toBe("not a time");
 	});
 });
