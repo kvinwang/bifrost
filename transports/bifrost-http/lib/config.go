@@ -46,6 +46,7 @@ import (
 	"github.com/maximhq/bifrost/plugins/maxim"
 	"github.com/maximhq/bifrost/plugins/otel"
 	"github.com/maximhq/bifrost/plugins/prompts"
+	"github.com/maximhq/bifrost/plugins/rolefix"
 	"github.com/maximhq/bifrost/plugins/routing"
 	"github.com/maximhq/bifrost/plugins/routing/complexity"
 	"github.com/maximhq/bifrost/plugins/routing/rules"
@@ -133,6 +134,7 @@ var builtinPluginNames = []string{
 	compat.PluginName,
 	maxim.PluginName,
 	routing.PluginName,
+	rolefix.PluginName,
 }
 
 func GetBuiltinPluginNames() []string {

@@ -14,6 +14,7 @@ import (
 	"github.com/maximhq/bifrost/plugins/modelcatalogresolver"
 	"github.com/maximhq/bifrost/plugins/otel"
 	"github.com/maximhq/bifrost/plugins/prompts"
+	"github.com/maximhq/bifrost/plugins/rolefix"
 	"github.com/maximhq/bifrost/plugins/routing"
 	"github.com/maximhq/bifrost/plugins/semanticcache"
 	"github.com/maximhq/bifrost/plugins/telemetry"
@@ -152,6 +153,13 @@ func loadBuiltinPlugin(ctx context.Context, name string, pluginConfig any, bifro
 			return nil, fmt.Errorf("failed to marshal compat plugin config: %w", err)
 		}
 		return compat.Init(*compatConfig, logger, bifrostConfig.ModelCatalog)
+
+	case rolefix.PluginName:
+		rolefixConfig, err := MarshalPluginConfig[rolefix.Config](pluginConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal rolefix plugin config: %w", err)
+		}
+		return rolefix.Init(*rolefixConfig, logger)
 
 	case modelcatalogresolver.PluginName:
 		return modelcatalogresolver.Init(bifrostConfig.ModelCatalog, logger)
@@ -305,7 +313,17 @@ func (s *BifrostHTTPServer) loadBuiltinPlugins(ctx context.Context) error {
 	}
 	s.Config.SetPluginOrderInfo(maxim.PluginName, builtinPlacement, schemas.Ptr(9))
 
-	// 10. ModelCatalogResolver (last routing layer — fills req.Provider from catalog only when
+	// 10. Rolefix (if configured in PluginConfigs). Runs after compat so it sees the
+	// final request shape for each attempt.
+	rolefixConfig := s.getPluginConfig(rolefix.PluginName)
+	if rolefixConfig != nil && rolefixConfig.Enabled {
+		s.registerPluginWithStatus(ctx, rolefix.PluginName, nil, rolefixConfig.Config, false)
+	} else {
+		s.markPluginDisabled(rolefix.PluginName)
+	}
+	s.Config.SetPluginOrderInfo(rolefix.PluginName, builtinPlacement, schemas.Ptr(10))
+
+	// 11. ModelCatalogResolver (last routing layer — fills req.Provider from catalog only when
 	// no earlier routing plugin (governance routing rules, governance VK LB, enterprise LB)
 	// already set one. CEL rules can still match on provider == "" because this runs last.
 	// Requires a model catalog; only register when one is configured.

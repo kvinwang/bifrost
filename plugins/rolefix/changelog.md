@@ -1,0 +1,1 @@
+- feat: initial rolefix plugin that folds leading system/developer messages into instructions (Responses) or one leading system message (Chat) and demotes later ones to user, for configured model globs

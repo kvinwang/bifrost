@@ -23,6 +23,7 @@ require (
 	github.com/maximhq/bifrost/plugins/maxim v1.7.4
 	github.com/maximhq/bifrost/plugins/modelcatalogresolver v1.1.4
 	github.com/maximhq/bifrost/plugins/otel v1.5.4
+	github.com/maximhq/bifrost/plugins/rolefix v0.1.0
 	github.com/maximhq/bifrost/plugins/prompts v1.1.4
 	github.com/maximhq/bifrost/plugins/routing v1.1.1
 	github.com/maximhq/bifrost/plugins/semanticcache v1.6.4
@@ -242,3 +243,4 @@ require (
 	gorm.io/driver/postgres v1.6.0 // indirect
 )
 replace github.com/maximhq/bifrost/core => ../core
+replace github.com/maximhq/bifrost/plugins/rolefix => ../plugins/rolefix
