@@ -6,6 +6,7 @@ import { CompatConfig, DefaultCoreConfig } from "@/lib/types/config";
 import { RbacOperation, RbacResource, useRbac } from "@enterprise/lib";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import RoleFixSection from "./roleFixSection";
 
 export default function CompatibilityView() {
 	const hasSettingsUpdateAccess = useRbac(RbacResource.Settings, RbacOperation.Update);
@@ -146,10 +147,10 @@ export default function CompatibilityView() {
 				<div className="flex items-center justify-between space-x-2">
 					<div className="space-y-0.5">
 						<label htmlFor="compat-azure-deepseek" className="text-sm font-medium">
-                            Use Chat Completion APIs for Azure Deepseek models
+							Use Chat Completion APIs for Azure Deepseek models
 						</label>
 						<p className="text-muted-foreground text-sm">
-                            Use Chat Completion APIs for Claude Code, Codex, etc. for Azure Deepseek models.
+							Use Chat Completion APIs for Claude Code, Codex, etc. for Azure Deepseek models.
 						</p>
 					</div>
 					<Switch
@@ -168,6 +169,8 @@ export default function CompatibilityView() {
 					{isLoading ? "Saving..." : "Save Changes"}
 				</Button>
 			</div>
+
+			<RoleFixSection />
 		</div>
 	);
 }

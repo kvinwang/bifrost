@@ -31,8 +31,9 @@ const lateSystemPrefix = "[system] "
 // Config defines the configuration for the rolefix plugin.
 type Config struct {
 	// Models is a list of globs matched against "provider/model" and against
-	// the bare model name. `*` matches any run of characters (including `/`),
-	// `?` matches a single character. Example: "redpill/qwen/*".
+	// the bare model name, case-insensitively. `*` matches any run of
+	// characters (including `/`) and `?` a single character, anywhere in the
+	// pattern. Examples: "redpill/qwen/*", "*qwen*", "redpill/*/qwen3.?-27b".
 	Models []string `json:"models"`
 }
 
@@ -60,10 +61,11 @@ func Init(config Config, logger schemas.Logger) (*RoleFixPlugin, error) {
 	return p, nil
 }
 
-// compileGlob turns a glob into an anchored regexp where `*` spans `/`.
+// compileGlob turns a glob into an anchored, case-insensitive regexp where
+// `*` spans `/`.
 func compileGlob(glob string) (*regexp.Regexp, error) {
 	var b strings.Builder
-	b.WriteString("^")
+	b.WriteString("(?i)^")
 	for _, r := range glob {
 		switch r {
 		case '*':

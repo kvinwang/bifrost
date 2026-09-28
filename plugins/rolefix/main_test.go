@@ -52,6 +52,32 @@ func TestMatches(t *testing.T) {
 	}
 }
 
+func TestMatchesWildcards(t *testing.T) {
+	cases := []struct {
+		glob     string
+		provider schemas.ModelProvider
+		model    string
+		want     bool
+	}{
+		{"*qwen*", "gpu19", "qwen38-27b", true},
+		{"*qwen*", "redpill", "phala/qwen3.8-27b-uncensored", true},
+		{"*qwen*", "redpill", "Qwen/Qwen3.5-27B", true}, // case-insensitive
+		{"*qwen*", "redpill", "z-ai/glm-5.3", false},
+		{"redpill/*/qwen3.?-27b", "redpill", "qwen/qwen3.6-27b", true},
+		{"redpill/*/qwen3.?-27b", "redpill", "qwen/qwen3.10-27b", false},
+		{"redpill/*-uncensored", "redpill", "phala/qwen3.8-27b-uncensored", true},
+		{"redpill/*-uncensored", "redpill", "phala/qwen3.8-27b", false},
+		{"*", "any", "model", true},
+		{"qwen3.8", "redpill", "qwen3x8", false}, // dot is literal
+	}
+	for _, c := range cases {
+		p := newPlugin(t, c.glob)
+		if got := p.matches(c.provider, c.model); got != c.want {
+			t.Errorf("glob %q: matches(%q, %q) = %v, want %v", c.glob, c.provider, c.model, got, c.want)
+		}
+	}
+}
+
 func TestPreLLMHookResponsesFoldsLeadingAndDemotesLate(t *testing.T) {
 	p := newPlugin(t, "redpill/qwen/*")
 	input := []schemas.ResponsesMessage{
