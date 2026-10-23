@@ -49,6 +49,7 @@ import { cn } from "@/lib/utils";
 import { LOG_LEVEL_BADGE_CLASSES, meetsMinLogLevel, type LogLevel } from "@/lib/utils/logLevel";
 import { downloadAsJson } from "@/lib/utils/browser-download";
 import { formatCompactNumber } from "@/lib/utils/numbers";
+import { outputTokensPerSecond } from "@/lib/utils/streamTiming";
 import { applyRedactionMapping, applyRedactionMappingToValue, hasRedactionMappingEntries } from "@/lib/utils/redaction";
 import { extractResponsesItemPayload, summarizeResponsesToolCall } from "@/lib/utils/responsesItems";
 import { isJson } from "@/lib/utils/validation";
@@ -1160,6 +1161,7 @@ export function LogDetailView({
 	const isRealtimeTurn = log.object === "realtime.turn";
 	const isRealtimeTranscription =
 		isRealtimeTurn && log.metadata?.realtime_event_type === "conversation.item.input_audio_transcription.completed";
+	const tps = outputTokensPerSecond(log);
 	const audioSeconds = log.token_usage?.audio_seconds;
 	const isBatch = isBatchOperation(log.object);
 	const batchDebug = log.batch_debug;
@@ -1701,6 +1703,22 @@ export function LogDetailView({
 								tooltip="Time added by Bifrost itself: routing, plugins, and processing."
 								value={log.overhead_latency == null || isNaN(log.overhead_latency) ? "N/A" : <div>{log.overhead_latency.toFixed(2)}ms</div>}
 							/>
+							{log.time_to_first_token != null && (
+								<LogEntryDetailsView
+									className="w-full"
+									label="Time to First Token"
+									tooltip="Time from request start to the first streamed chunk from the provider."
+									value={<div>{log.time_to_first_token.toFixed(2)}ms</div>}
+								/>
+							)}
+							{tps != null && (
+								<LogEntryDetailsView
+									className="w-full"
+									label="Output Speed"
+									tooltip="Completion tokens divided by the time from first to last chunk."
+									value={<div>{tps.toFixed(1)} tok/s</div>}
+								/>
+							)}
 						</div>
 						{log.overhead_breakdown && log.overhead_breakdown.length > 0 ? (
 							<OverheadBreakdown buckets={log.overhead_breakdown} overheadMs={log.overhead_latency} />

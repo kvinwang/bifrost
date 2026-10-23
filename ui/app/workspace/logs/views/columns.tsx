@@ -20,6 +20,7 @@ import {
 import { ChatMessageContent, DisplayLogEntry, LLMUsage, LogEntry, ResponsesMessageContentBlock } from "@/lib/types/logs";
 import { cn } from "@/lib/utils";
 import { formatCompactNumber } from "@/lib/utils/numbers";
+import { outputTokensPerSecond } from "@/lib/utils/streamTiming";
 import { ColumnDef } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
 import { ArrowUpDown, ChevronRight, CornerDownRight, Loader2, MoreHorizontal, Trash2 } from "lucide-react";
@@ -412,12 +413,25 @@ export const createColumns = (
 				}
 				const tone = latency >= 5000 ? "bg-chart-error" : latency >= 2000 ? "bg-chart-warning" : "bg-chart-success";
 				const pct = Math.min(100, (latency / 5000) * 100);
+				const ttft = row.original.time_to_first_token;
+				const tps = outputTokensPerSecond(row.original);
 				return (
-					<div className="flex items-center gap-2 pl-4">
-						<span className="font-mono text-[12px] tabular-nums">{formatLatency(latency)}</span>
-						<div className="relative h-1.5 w-[56px] overflow-hidden rounded-sm bg-zinc-200 dark:bg-zinc-700">
-							<div className={cn("absolute inset-y-0 left-0 rounded-sm opacity-85", tone)} style={{ width: `${pct}%` }} />
+					<div className="flex flex-col items-start gap-0.5 pl-4 leading-tight">
+						<div className="flex items-center gap-2">
+							<span className="font-mono text-[12px] tabular-nums">{formatLatency(latency)}</span>
+							<div className="relative h-1.5 w-[56px] overflow-hidden rounded-sm bg-zinc-200 dark:bg-zinc-700">
+								<div className={cn("absolute inset-y-0 left-0 rounded-sm opacity-85", tone)} style={{ width: `${pct}%` }} />
+							</div>
 						</div>
+						{ttft != null && (
+							<div
+								className="text-muted-foreground font-mono text-[10.5px] tabular-nums"
+								title="Time to first token · output tokens per second"
+							>
+								<span>TTFT {formatLatency(ttft)}</span>
+								{tps != null && <span> · {tps.toFixed(0)} tok/s</span>}
+							</div>
+						)}
 					</div>
 				);
 			},

@@ -409,6 +409,10 @@ func (p *LoggerPlugin) applyStreamingOutputToEntry(entry *logstore.Log, streamRe
 		latF := float64(streamResponse.Data.Latency)
 		entry.Latency = &latF
 	}
+	if streamResponse.Data.TimeToFirstToken > 0 {
+		ttft := float64(streamResponse.Data.TimeToFirstToken)
+		entry.TimeToFirstToken = &ttft
+	}
 
 	// Update model and alias from resolved/requested model pair.
 	applyModelAlias(entry, streamResponse.RequestedModel, streamResponse.ResolvedModel)

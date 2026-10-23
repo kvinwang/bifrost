@@ -738,6 +738,7 @@ export interface LogEntry {
 	latency?: number;
 	upstream_latency?: number; // provider socket time across all attempts, ms
 	overhead_latency?: number; // Bifrost overhead (total minus upstream), ms
+	time_to_first_token?: number; // streaming only: request start to first provider chunk, ms
 	overhead_breakdown?: OverheadBucket[]; // per-span self-time decomposition of overhead (microseconds)
 	token_usage?: LLMUsage;
 	cache_debug?: CacheMetadata;
