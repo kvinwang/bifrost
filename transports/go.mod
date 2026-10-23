@@ -244,3 +244,5 @@ require (
 )
 replace github.com/maximhq/bifrost/core => ../core
 replace github.com/maximhq/bifrost/plugins/rolefix => ../plugins/rolefix
+replace github.com/maximhq/bifrost/framework => ../framework
+replace github.com/maximhq/bifrost/plugins/logging => ../plugins/logging

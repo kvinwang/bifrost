@@ -29,6 +29,8 @@
 
   COPY core/ /core/
   COPY plugins/rolefix/ /plugins/rolefix/
+  COPY framework/ /framework/
+  COPY plugins/logging/ /plugins/logging/
   COPY transports/go.mod transports/go.sum ./
   RUN ls
   RUN cat go.mod
